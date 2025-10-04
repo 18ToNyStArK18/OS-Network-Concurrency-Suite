@@ -33,6 +33,10 @@ typedef struct data{
 	u_char * packet;
 	struct pcap_pkthdr hdr;
 }data;
+typedef struct {
+    long *id_counter;
+    int link_type;
+} capture_state_t;
 void print_packet_summary(int packet_id, const data* packet_info);
 extern data my_data[MAX_PACKETS+1];
 extern long p_index;

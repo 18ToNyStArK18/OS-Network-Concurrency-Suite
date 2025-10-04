@@ -275,7 +275,6 @@ void ARP(const u_char *packet) {
 
 void pckt_handler(u_char *user_data, const struct pcap_pkthdr *pkthdr, const u_char *packet){
     //filter logic
-    
     long *id = (long *)user_data;
     p_index = *id;
     bool is_arp = false , is_tcp = false , is_udp = false;
@@ -329,6 +328,13 @@ void pckt_handler(u_char *user_data, const struct pcap_pkthdr *pkthdr, const u_c
             dst = ntohs(hd->uh_dport);
         }
     }
+    int flag = 1;
+    for(int i =0;i < 6; i++){
+        if(filter[0] == '0')
+            flag =0;
+    }
+    if(flag)
+        print_packet = true;
     if (filter[0] == '1' && is_tcp && (src == 80 || dst == 80)) print_packet = true;
     if (filter[1] == '1' && is_tcp && (src == 443 || dst == 443)) print_packet = true;
     if (filter[2] == '1' && (src == 53 || dst == 53)) print_packet = true;
@@ -337,7 +343,6 @@ void pckt_handler(u_char *user_data, const struct pcap_pkthdr *pkthdr, const u_c
     if (filter[5] == '1' && is_udp) print_packet = true;
     if(!print_packet)
         return;
-
     (*id)++;
     printf("---------------------------------------------------------\n");
     printf("\nPacket #%ld | ",*id);
