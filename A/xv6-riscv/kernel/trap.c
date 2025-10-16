@@ -27,7 +27,7 @@ trapinit(void)
 void
 trapinithart(void)
 {
-  w_stvec((uint64)kernelvec);
+    w_stvec((uint64)kernelvec);
 }
 
 //
@@ -35,93 +35,95 @@ trapinithart(void)
 // called from, and returns to, trampoline.S
 // return value is user satp for trampoline.S to switch to.
 //
-uint64
+    uint64
 usertrap(void)
 {
-  int which_dev = 0;
+    int which_dev = 0;
 
-  if((r_sstatus() & SSTATUS_SPP) != 0)
-    panic("usertrap: not from user mode");
+    if((r_sstatus() & SSTATUS_SPP) != 0)
+        panic("usertrap: not from user mode");
 
-  // send interrupts and exceptions to kerneltrap(),
-  // since we're now in the kernel.
-  w_stvec((uint64)kernelvec);  //DOC: kernelvec
+    // send interrupts and exceptions to kerneltrap(),
+    // since we're now in the kernel.
+    w_stvec((uint64)kernelvec);  //DOC: kernelvec
 
-  struct proc *p = myproc();
-  
-  // save user program counter.
-  p->trapframe->epc = r_sepc();
-  
-  if(r_scause() == 8){
-    // system call
+    struct proc *p = myproc();
+
+    // save user program counter.
+    p->trapframe->epc = r_sepc();
+
+    if(r_scause() == 8){
+        // system call
+
+        if(killed(p))
+            kexit(-1);
+
+        // sepc points to the ecall instruction,
+        // but we want to return to the next instruction.
+        p->trapframe->epc += 4;
+
+        // an interrupt will change sepc, scause, and sstatus,
+        // so enable only now that we're done with those registers.
+        intr_on();
+
+        syscall();
+    } else if((which_dev = devintr()) != 0){
+        // ok
+    }else if((r_scause() == 12 || r_scause() == 15 || r_scause() == 13)) { // Page fault occurred
+        uint64 va = r_stval();
+        pte_t *pte = walk(p->pagetable, va, 0);
+
+        // CASE 1: Minor Fault (Trap-on-Write).
+        // The page is already in memory, but we tried to write to it.
+        if(r_scause() == 15 && pte != 0 && (*pte & PTE_V) && !(*pte & PTE_W)) {
+            // This is not an error. It's how we track dirty pages.
+
+            // 1. Grant write permission.
+            *pte |= PTE_W;
+
+            // 2. Find the page in our resident list and mark it as dirty.
+            for(int i = 0; i < p->num_resident; i++) {
+                if(p->resident_pages[i].va == PGROUNDDOWN(va)) {
+                    p->resident_pages[i].dirty = 1;
+                    break;
+                }
+            }
+        } 
+        // CASE 2: Major Fault.
+        // The page is not in memory. We need to allocate and load it.
+        else { 
+            const char *access_type;
+            if (r_scause() == 12) { access_type = "exec"; }
+            else if (r_scause() == 13) { access_type = "read"; }
+            else { access_type = "write"; }
+
+            // Call the main page fault handler to do the heavy lifting.
+            if(handle_pgfault(p->pagetable, va, access_type) < 0) {
+                // If the handler fails, the address is invalid.
+                printf("[pid %d] KILL invalid-access va=0x%lx access=%s\n", p->pid, va, access_type);
+                setkilled(p);
+            }
+        }
+    } else {
+            printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
+            printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+            setkilled(p);
+        }
 
     if(killed(p))
-      kexit(-1);
+        kexit(-1);
 
-    // sepc points to the ecall instruction,
-    // but we want to return to the next instruction.
-    p->trapframe->epc += 4;
+    // give up the CPU if this is a timer interrupt.
+    if(which_dev == 2)
+        yield();
 
-    // an interrupt will change sepc, scause, and sstatus,
-    // so enable only now that we're done with those registers.
-    intr_on();
+    prepare_return();
 
-    syscall();
-  } else if((which_dev = devintr()) != 0){
-    // ok
-  } else if((r_scause()== 12 || r_scause() == 15 || r_scause() == 13)) {
-    // page fault
-    // identify what caused the page fault and then do the things based on that things
-    uint64 va = PGROUNDDOWN(r_stval());
-    struct proc *p = myproc();
-    const char *access_type;
-    pte_t *pte = walk(p->pagetable,va,0);
-    if (r_scause() == 12) { access_type = "exec"; }
-    else if (r_scause() == 13) { access_type = "read"; }
-    else { access_type = "write"; }
+    // the user page table to switch to, for trampoline.S
+    uint64 satp = MAKE_SATP(p->pagetable);
 
-
-    if(r_scause() == 15 && pte != 0 && (*pte & PTE_V) && !(*pte & PTE_W)){
-     *pte |= PTE_W;
-      
-      // Find the page in our resident list and mark it as dirty.
-      for(int i = 0; i < p->num_resident; i++) {
-        if(p->resident_pages[i].va == PGROUNDDOWN(va)) {
-          p->resident_pages[i].dirty = 1;
-          break;
-        }
-      }
-    }
-       // MODIFICATION: Call our new master handler.
-    else if(handle_pgfault(p->pagetable, va,access_type) < 0) {
-      // If the handler fails, the address is invalid.
-      printf("[pid %d] KILL invalid-access va=0x%lx access=%s\n", p->pid, r_stval(), access_type);
-      setkilled(p);
-    } else {
-        // The handler succeeded. Now, we just need to log the correct event.
-        // (This logging logic is simplified; you can refine it based on the cause)
-        sfence_vma();
-    }
-  } else {
-      printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
-      printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
-      setkilled(p);
-  }
-
-  if(killed(p))
-      kexit(-1);
-
-  // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
-      yield();
-
-  prepare_return();
-
-  // the user page table to switch to, for trampoline.S
-  uint64 satp = MAKE_SATP(p->pagetable);
-
-  // return to trampoline.S; satp value in a0.
-  return satp;
+    // return to trampoline.S; satp value in a0.
+    return satp;
 }
 
 //

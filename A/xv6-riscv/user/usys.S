@@ -105,3 +105,8 @@ uptime:
  li a7, SYS_uptime
  ecall
  ret
+.global memstat
+memstat:
+ li a7, SYS_memstat
+ ecall
+ ret

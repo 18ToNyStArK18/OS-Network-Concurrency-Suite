@@ -144,6 +144,7 @@ UPROGS=\
 	$U/_dorphan\
 	$U/_evicttest\
 	$U/_forktest2\
+	$U/_memstat_test\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

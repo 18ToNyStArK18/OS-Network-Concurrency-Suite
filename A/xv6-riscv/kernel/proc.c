@@ -129,6 +129,11 @@ found:
   p->num_resident = 0;
   p->num_swappped_pages=0;
   p->swap_path[0]='\0';
+  p->text_end=0;
+  p->text_start=0;
+  p->data_start=0;
+  p->data_end=0;
+  p->stack_top=0;
   for(int i=0;i<MAX_SWAP_PAGES;i++)
       p->swap_slots[i]=0;
   // Allocate a trapframe page.

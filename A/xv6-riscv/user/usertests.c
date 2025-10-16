@@ -7,7 +7,7 @@
 #include "kernel/syscall.h"
 #include "kernel/memlayout.h"
 #include "kernel/riscv.h"
-
+#define max 25000
 //
 // Tests xv6 system calls.  usertests without arguments runs them all
 // and usertests <name> runs <name> test. The test runner creates for
@@ -2968,7 +2968,8 @@ execout(char *s)
       exit(1);
     } else if(pid == 0){
       // allocate all of memory.
-      while(1){
+      int n = 0;
+      while(n++ < max){
         char *a = sbrk(PGSIZE);
         if(a == SBRK_ERROR)
           break;
@@ -3168,7 +3169,7 @@ countfree()
 {
   int n = 0;
   uint64 sz0 = (uint64)sbrk(0);
-  while(1){
+  while(n<max){
     char *a = sbrk(PGSIZE);
     if(a == SBRK_ERROR){
       break;

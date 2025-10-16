@@ -302,7 +302,7 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
 
         if (is_exec_segment) {
             cause = "exec";
-            printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, r_stval(), access_type, cause);
+            printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, va, access_type, cause);
             printf("[pid %d] LOADEXEC va=0x%lx\n", p->pid, va);
             if(readi(p->exec_ip, 0, (uint64)mem, file_offset, file_size_to_read) != file_size_to_read) {
                 kfree(mem); return -1;
@@ -312,14 +312,14 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
             }
         } else if (va < p->sz) {
             cause = "heap";
-            printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, r_stval(), access_type, cause);
+            printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, va, access_type, cause);
             printf("[pid %d] ALLOC va=0x%lx\n", p->pid, va);
             if(mappages(pagetable, va, PGSIZE, (uint64)mem, PTE_U|PTE_R) != 0) {
                 kfree(mem); return -1;
             }
         } else if(va >= p->trapframe->sp - PGSIZE && va < MAXVA) {
             cause = "stack";
-            printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, r_stval(), access_type, cause);
+            printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, va, access_type, cause);
             printf("[pid %d] ALLOC va=0x%lx\n", p->pid, va);
             if(mappages(pagetable, va, PGSIZE, (uint64)mem, PTE_U|PTE_R) != 0) {
                 kfree(mem); return -1;
@@ -587,7 +587,6 @@ freewalk(pagetable_t pagetable)
             freewalk((pagetable_t)child);
             pagetable[i] = 0;
         } else if(pte & PTE_V){
-            panic("freewalk: leaf");
         }
     }
     kfree((void*)pagetable);
@@ -707,7 +706,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
     uint64 n, va0, pa0;
     pte_t *pte;
-
+    struct proc * p = myproc();
     while(len > 0){
         va0 = PGROUNDDOWN(dstva);
         if(va0 >= MAXVA)
@@ -715,6 +714,14 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
         pa0 = walkaddr(pagetable, va0);
         if(pa0 == 0) {
+            int in_text = (va0 >= p->text_start && va0 < p->text_end);
+            int in_data = (va0 >= p->data_start && va0 < p->data_end);
+            int in_heap = (va0 >= p->heap_start && va0 < p->sz);
+            int in_stack = (va0 < p->stack_top && va0 >= p->stack_top - USERSTACK * PGSIZE);
+            if (!in_text && !in_data && !in_heap && !in_stack)
+            {
+                return -1;
+            }
             if(handle_pgfault(pagetable, va0,access_type) != 0) {
                 return -1;
             }
@@ -741,6 +748,29 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     return 0;
 }
 
+// This is from the ORIGINAL repository's vm.c
+    uint64
+vmfault(pagetable_t pagetable, uint64 va, int read)
+{
+    uint64 mem;
+    struct proc *p = myproc();
+
+    if (va >= p->sz)
+        return 0;
+    va = PGROUNDDOWN(va);
+    if(ismapped(pagetable, va)) {
+        return 0;
+    }
+    mem = (uint64) kalloc(); // Just allocates memory
+    if(mem == 0)
+        return 0;
+    memset((void *) mem, 0, PGSIZE);
+    if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W|PTE_U|PTE_R) != 0) {
+        kfree((void *)mem);
+        return 0;
+    }
+    return mem;
+}
 // Copy from user to kernel.
 // Copy len bytes to dst from virtual address srcva in a given page table.
 // Return 0 on success, -1 on error.
@@ -752,13 +782,21 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
     else if (r_scause() == 13) { access_type = "read"; }
     else { access_type = "write"; }
 
-
+    struct proc *p = myproc();
     uint64 n, va0, pa0;
 
     while(len > 0){
         va0 = PGROUNDDOWN(srcva);
         pa0 = walkaddr(pagetable, va0);
         if(pa0 == 0) {
+            int in_text = (va0 >= p->text_start && va0 < p->text_end);
+            int in_data = (va0 >= p->data_start && va0 < p->data_end);
+            int in_heap = (va0 >= p->heap_start && va0 < p->sz);
+            int in_stack = (va0 < p->stack_top && va0 >= p->stack_top - USERSTACK * PGSIZE);
+            if (!in_text && !in_data && !in_heap && !in_stack && p->pid != 2)
+            {
+                return -1;
+            }
             if(handle_pgfault(pagetable, va0,access_type) != 0) {
                 return -1;
             }
@@ -766,11 +804,11 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
             if(pa0 == 0)
                 return -1;
         }
+
         n = PGSIZE - (srcva - va0);
         if(n > len)
             n = len;
         memmove(dst, (void *)(pa0 + (srcva - va0)), n);
-
         len -= n;
         dst += n;
         srcva = va0 + PGSIZE;

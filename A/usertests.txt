@@ -1,0 +1,66 @@
+copyin OK
+copyout OK
+copyinstr1 OK
+copyinstr2 OK
+copyinstr3 OK
+rwsbrk OK
+truncate1 OK
+truncate2 OK
+opentest OK
+writetest OK
+writebig OK
+createtest OK
+dirtest OK
+exectest OK
+pipe1 OK
+killstatus OK
+preempt OK
+exitwait OK
+reparent OK
+twochildren OK
+forkfork OK
+forkforkfork OK
+reparent2 OK
+mem OK
+sharedfd OK
+fourfiles OK
+createtest OK
+unlinkread OK
+linktest OK
+concreate OK
+linkunlink OK
+subdir OK
+bigwrite OK
+bigfile OK
+fourteen OK
+rmdot OK
+dirfile OK
+iref OK
+forktest OK
+sbrkbasic OK
+sbrkmuch OK
+kernmem OK
+MAXVAplus panic walk
+sbrkfail failed
+sbrkarg failed
+validatetest OK
+bsstest OK
+bigargtest OK
+argptest panic freewalk leaf
+stacktest panic mappages remap
+nowrite failed
+pgbug OK
+sbrkbugs crashed/infiniteloop
+sbrklast OK
+sbrk8000 OK
+badarg OK
+lazy_alloc OK
+lazy_unmap panic free walk
+lazy_copy panic freewal leaf
+lazy_sbrk OK
+bigdir OK
+manywrites OK
+badwrite OK
+execout idk what is happenening
+diskfull OK
+outofinodes OK

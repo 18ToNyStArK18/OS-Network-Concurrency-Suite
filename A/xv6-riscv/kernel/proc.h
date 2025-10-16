@@ -122,4 +122,10 @@ struct proc {
   char swap_path[20];
   int next_fifo_seq;
   int num_swappped_pages;
+  int text_start;
+  int text_end;
+  int data_start;
+  int data_end;
+  int heap_end;
+  int stack_top;
 };

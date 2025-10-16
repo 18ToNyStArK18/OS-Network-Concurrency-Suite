@@ -197,6 +197,11 @@ kexec(char *path, char **argv)
   uvmclear(pagetable, sz-(USERSTACK+1)*PGSIZE);
   sp = sz;
   stackbase = sp - USERSTACK*PGSIZE;
+  p->text_start = text_start;
+  p->text_end = text_end;
+  p->data_start = data_start;
+  p->data_end = data_end;
+  p->stack_top = sp;
   printf("[pid %d] INIT-LAZYMAP text=[0x%lx,0x%lx) data=[0x%lx,0x%lx) heap_start=0x%lx stack_top=0x%lx\n",
           p->pid, text_start, text_end, data_start, data_end, p->heap_start, sz);
 
