@@ -38,7 +38,7 @@ pthread_mutex_t sofa_access_lock = PTHREAD_MUTEX_INITIALIZER;
 
 sem_t num_of_chefs;
 sem_t num_of_cus;
-
+sem_t num_of_seats;
 typedef struct{
     long arrival_time;
     long customer_id;
@@ -98,7 +98,6 @@ event* my_dequeue(Queue *q) {
     pthread_mutex_unlock(&q->mutex);
     return item;
 }
-
 int get_count(Queue *q){
     int ans = 0;
     pthread_mutex_lock(&q->mutex);
@@ -110,72 +109,83 @@ int get_count(Queue *q){
 void *Chef(void *args){
     int id = *(int*)args;
     while(1){
+        pthread_mutex_lock(&sofa_access_lock);
         event *current = my_dequeue(&sofa);
-
+        pthread_mutex_unlock(&sofa_access_lock);
         if(current != NULL){ 
+            sleep(1);
             printf("[%ld] Chef %d is baking for Customer %ld\n", time(NULL)-init_time,id,current->customer_id);
             sleep(2); //for baking
             current->is_baking = 1;
             printf("[%ld] Customer %ld got cake, ready to pay\n",time(NULL)-init_time,current->customer_id);
+            sleep(1); // invoking payment
             pthread_mutex_lock(&cash_register_lock);
-            sleep(2); // for payment
+            printf("[%ld] Chef %d accepts the payment for the customer %ld\n",time(NULL)-init_time,id,current->customer_id);
+            sleep(2); // for processing payment
             pthread_mutex_unlock(&cash_register_lock);
             current->is_paying = 1;
-            printf("[%ld] Customer %ld payment done, ready to leave\n",time(NULL)-init_time,current->customer_id);
             pthread_mutex_lock(&sofa_access_lock);
             event *standing_customer = my_dequeue(&standing);
+            pthread_mutex_unlock(&sofa_access_lock);
             if(standing_customer != NULL){
-                sleep(1); // to sit
+
                 printf("[%ld] Customer %ld left\n",time(NULL)-init_time,current->customer_id);
+                sleep(1); // to leave
                 printf("[%ld] Customer %ld moves from standing to sofa\n",time(NULL)-init_time, standing_customer->customer_id);
+                sleep(1);
+                printf("[%ld] Customer %ld requests cake\n",time(NULL) - init_time,standing_customer->customer_id);
+                pthread_mutex_lock(&sofa_access_lock);
                 my_enqueue(&sofa, standing_customer);
+                pthread_mutex_unlock(&sofa_access_lock);
             }
             else{
-                sleep(1);// spends one second to leave
+
                 printf("[%ld] Customer %ld left\n",time(NULL)-init_time,current->customer_id);
+                sleep(1);// spends one second to leave
             }
-            pthread_mutex_unlock(&sofa_access_lock);
         }
-        
-        // Prevents the chef from burning 100% CPU when the sofa is empty
-        else 
-        usleep(10000); 
+
     }
     return NULL;
 }
 
 void *customer(void *args){
     event *current = (event *)args;
-    sleep(current->arrival_time+1);
+    sleep(current->arrival_time);
 
     if(sem_trywait(&num_of_cus) != 0){
         printf("[%ld] Customer %ld leaves, bakery is full.\n", time(NULL)-init_time, current->customer_id);
         return NULL;
     }
-    
+
     printf("[%ld] Customer %ld enters\n", time(NULL)-init_time, current->customer_id);
     sleep(1); // to enter
 
     pthread_mutex_lock(&sofa_access_lock);
-    if(get_count(&sofa) < SOFA_SEATS){
-        my_enqueue(&sofa,current);
+    if(get_count(&standing) == 0 && sem_trywait(&num_of_seats)==0){
         printf("[%ld] Customer %ld sits on the sofa\n",time(NULL)-init_time,current->customer_id);
+        pthread_mutex_unlock(&sofa_access_lock);
+        sleep(1);
+        pthread_mutex_lock(&sofa_access_lock);
+        my_enqueue(&sofa,current);
+        pthread_mutex_unlock(&sofa_access_lock);
+        printf("[%ld] Customer %ld requests cake\n",time(NULL) - init_time,current->customer_id);
     } else {
-        my_enqueue(&standing,current);
         printf("[%ld] Customer %ld is standing\n",time(NULL)-init_time,current->customer_id);
+        my_enqueue(&standing,current);
+        pthread_mutex_unlock(&sofa_access_lock);
     }
-    pthread_mutex_unlock(&sofa_access_lock);
 
     while(current->is_baking == 0)
-        sleep(1);
-    
-    while(current->is_paying == 0)
-        sleep(1);
-    
-    sleep(1);
-    sem_post(&num_of_cus); 
+        sleep(1);//wait until the baking
 
-    free(current); 
+    while(current->is_paying == 0)
+        sleep(1);//wait until the payment
+
+    sleep(1);//wait until he leaves
+    sem_post(&num_of_seats);//increase free sofa
+    sem_post(&num_of_cus);//increase the free slot in the shop
+
     return NULL;
 }
 
@@ -183,10 +193,11 @@ int main(){
     init_time = time(NULL);
     sem_init(&num_of_cus,0,BAKERY_CAPACITY);
     sem_init(&num_of_chefs,0,NUM_CHEFS);
+    sem_init(&num_of_seats,0,4);
 
     my_init(&standing);
     my_init(&sofa);
-    
+
     char line[200];
     pthread_t chef_threads[4];
     for(long i=0; i<4; i++){
@@ -194,7 +205,7 @@ int main(){
         *a = i+1;
         pthread_create(&chef_threads[i], NULL, Chef, a);
     }
-    
+
     pthread_t customer_threads[CUS_MAX];
     int i = 0;
     FILE *fp = fopen("input.txt","r");

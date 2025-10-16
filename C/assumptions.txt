@@ -3,3 +3,6 @@ Assumptions:
     2)as soon as the a customer sits on the sofa the the baking also starts if the chef is free
     3)for entering he takes one sec to sit he takes 1 second and after this id the chef is free the baking starts witout any delay
     4)baking takes 2 sec and payment takes 2 seconds and after that he takes one sec to leave and after that i am logging the "person leaving part"
+
+
+//Need to change the sleep order change the print functions

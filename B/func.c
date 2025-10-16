@@ -84,16 +84,31 @@ void print_packet_summary(int packet_id, const data* packet_info) {
         inet_ntop(AF_INET, arp_header->arp_tpa, final_dst, sizeof(final_dst));
     } else if (ether_type == ETHERTYPE_IPV6) {
         strcpy(l3_proto, "IPv6");
-        // (IPv6 summary logic would go here, using snprintf for safety)
-        strcpy(final_src, "IPv6_Src");
-        strcpy(final_dst, "IPv6_Dst");
+        const struct ip6_hdr *ip6_header = (const struct ip6_hdr *)l3_packet;
+        inet_ntop(AF_INET6, &ip6_header->ip6_src, ip_src_str, sizeof(ip_src_str));
+        inet_ntop(AF_INET6, &ip6_header->ip6_dst, ip_dst_str, sizeof(ip_dst_str));
+        snprintf(final_src, sizeof(final_src), "%s", ip_src_str);
+        snprintf(final_dst, sizeof(final_dst), "%s", ip_dst_str);
+
+        const u_char *l4_packet = l3_packet + 40; // IPv6 header is fixed at 40 bytes
+        if (ip6_header->ip6_nxt == IPPROTO_TCP) {
+            strcpy(l4_proto, "TCP");
+            const struct tcphdr *tcp_header = (const struct tcphdr *)l4_packet;
+            snprintf(final_src, sizeof(final_src), "[%s]:%d", ip_src_str, ntohs(tcp_header->th_sport));
+            snprintf(final_dst, sizeof(final_dst), "[%s]:%d", ip_dst_str, ntohs(tcp_header->th_dport));
+        } else if (ip6_header->ip6_nxt == IPPROTO_UDP) {
+            strcpy(l4_proto, "UDP");
+            const struct udphdr *udp_header = (const struct udphdr *)l4_packet;
+            snprintf(final_src, sizeof(final_src), "[%s]:%d", ip_src_str, ntohs(udp_header->uh_sport));
+            snprintf(final_dst, sizeof(final_dst), "[%s]:%d", ip_dst_str, ntohs(udp_header->uh_dport));
+        }    
     }
 
     printf("  #%-4d | %ld.%06ld | %-7s | %-5s | %-22s -> %-22s\n",
-           packet_id,
-           packet_info->hdr.ts.tv_sec, packet_info->hdr.ts.tv_usec,
-           l3_proto, l4_proto,
-           final_src, final_dst);
+            packet_id,
+            packet_info->hdr.ts.tv_sec, packet_info->hdr.ts.tv_usec,
+            l3_proto, l4_proto,
+            final_src, final_dst);
 }
 // llm code ends
 void handle_payload(const u_char *payload, int len) {
@@ -101,7 +116,7 @@ void handle_payload(const u_char *payload, int len) {
 
     const int bytes_per_line = 16;
     char ascii[bytes_per_line + 1];
-    
+
     int len_to_print = len > 64 ? 64 : len;
 
     printf("Data (first %d bytes):\n", len_to_print);
@@ -120,156 +135,156 @@ void handle_payload(const u_char *payload, int len) {
 
         if ((i + 1) % bytes_per_line == 0 || i == len_to_print - 1) {
             ascii[(i % bytes_per_line) + 1] = '\0';
-            
-			for (int j = (i % bytes_per_line) + 1; j < bytes_per_line; j++) {
-				printf("   ");
-			}
-			printf("%s\n", ascii);
-		}
-	}
+
+            for (int j = (i % bytes_per_line) + 1; j < bytes_per_line; j++) {
+                printf("   ");
+            }
+            printf("%s\n", ascii);
+        }
+    }
 }
 
 void UDP(const u_char *packet,int ip_payload_len) {
-	const struct udphdr *udp_header = (const struct udphdr *)packet;
-	uint16_t src_port = ntohs(udp_header->uh_sport);
-	uint16_t dst_port = ntohs(udp_header->uh_dport);
+    const struct udphdr *udp_header = (const struct udphdr *)packet;
+    uint16_t src_port = ntohs(udp_header->uh_sport);
+    uint16_t dst_port = ntohs(udp_header->uh_dport);
     printf("UDP HEADER (Layer 4)\n");
     printf("--------------------\n");
-	printf("Src Port: %d%s | Dst Port: %d%s | Length: %d | Checksum: 0x%04X\n",
-			src_port, get_port_name(src_port),
-			dst_port, get_port_name(dst_port),
-			ntohs(udp_header->uh_ulen),
-			ntohs(udp_header->uh_sum));
-	int payload_len = ip_payload_len - 8;
-	const u_char *payload = packet + 8;
-	const char *app_proto = get_app_protocol_name(dst_port);
-	printf("L7 (Payload): Identified as %s on port %d - %d bytes\n", app_proto, dst_port, payload_len);
-	handle_payload(payload, payload_len);
+    printf("Src Port: %d%s | Dst Port: %d%s | Length: %d | Checksum: 0x%04X\n",
+            src_port, get_port_name(src_port),
+            dst_port, get_port_name(dst_port),
+            ntohs(udp_header->uh_ulen),
+            ntohs(udp_header->uh_sum));
+    int payload_len = ip_payload_len - 8;
+    const u_char *payload = packet + 8;
+    const char *app_proto = get_app_protocol_name(dst_port);
+    printf("L7 (Payload): Identified as %s on port %d - %d bytes\n", app_proto, dst_port, payload_len);
+    handle_payload(payload, payload_len);
 }
 void TCP(const u_char *packet,int ip_payload_len) {
-	const struct tcphdr *tcp_header = (const struct tcphdr *)packet;
-	uint16_t src_port = ntohs(tcp_header->th_sport);
-	uint16_t dst_port = ntohs(tcp_header->th_dport);
-	uint tcp_header_len = tcp_header->th_off * 4;
+    const struct tcphdr *tcp_header = (const struct tcphdr *)packet;
+    uint16_t src_port = ntohs(tcp_header->th_sport);
+    uint16_t dst_port = ntohs(tcp_header->th_dport);
+    uint tcp_header_len = tcp_header->th_off * 4;
     printf("TCP HEADER (Layer 4)\n");
     printf("--------------------\n");
-	printf("Src Port: %d%s | Dst Port: %d%s | Seq: %u | Ack: %u\n",
-			src_port, get_port_name(src_port),
-			dst_port, get_port_name(dst_port),
-			ntohl(tcp_header->th_seq),
-			ntohl(tcp_header->th_ack));
+    printf("Src Port: %d%s | Dst Port: %d%s | Seq: %u | Ack: %u\n",
+            src_port, get_port_name(src_port),
+            dst_port, get_port_name(dst_port),
+            ntohl(tcp_header->th_seq),
+            ntohl(tcp_header->th_ack));
 
-	char flags_str[40] = {0};
-	if (tcp_header->th_flags & TH_SYN) strcat(flags_str, "SYN, ");
-	if (tcp_header->th_flags & TH_ACK) strcat(flags_str, "ACK, ");
-	if (tcp_header->th_flags & TH_FIN) strcat(flags_str, "FIN, ");
-	if (tcp_header->th_flags & TH_RST) strcat(flags_str, "RST, ");
-	if (tcp_header->th_flags & TH_PUSH) strcat(flags_str, "PUSH, ");
-	if (tcp_header->th_flags & TH_URG) strcat(flags_str, "URG, ");
+    char flags_str[40] = {0};
+    if (tcp_header->th_flags & TH_SYN) strcat(flags_str, "SYN, ");
+    if (tcp_header->th_flags & TH_ACK) strcat(flags_str, "ACK, ");
+    if (tcp_header->th_flags & TH_FIN) strcat(flags_str, "FIN, ");
+    if (tcp_header->th_flags & TH_RST) strcat(flags_str, "RST, ");
+    if (tcp_header->th_flags & TH_PUSH) strcat(flags_str, "PUSH, ");
+    if (tcp_header->th_flags & TH_URG) strcat(flags_str, "URG, ");
 
-	if (strlen(flags_str) > 0) {
-		flags_str[strlen(flags_str) - 2] = '\0';
-	}
+    if (strlen(flags_str) > 0) {
+        flags_str[strlen(flags_str) - 2] = '\0';
+    }
 
-	printf("Flags: [%s] | Window: %d | Checksum: 0x%04X | Header Length: %d bytes\n",
-			flags_str,
-			ntohs(tcp_header->th_win),
-			ntohs(tcp_header->th_sum),
-			tcp_header->th_off * 4);
-	int payload_len = ip_payload_len - tcp_header_len;
-	const u_char *payload = packet + tcp_header_len;
-	const char *app_proto = get_app_protocol_name(dst_port);
-	printf("L7 (Payload): Identified as %s on port %d - %d bytes\n", app_proto, dst_port, payload_len);
-	handle_payload(payload, payload_len);
+    printf("Flags: [%s] | Window: %d | Checksum: 0x%04X | Header Length: %d bytes\n",
+            flags_str,
+            ntohs(tcp_header->th_win),
+            ntohs(tcp_header->th_sum),
+            tcp_header->th_off * 4);
+    int payload_len = ip_payload_len - tcp_header_len;
+    const u_char *payload = packet + tcp_header_len;
+    const char *app_proto = get_app_protocol_name(dst_port);
+    printf("L7 (Payload): Identified as %s on port %d - %d bytes\n", app_proto, dst_port, payload_len);
+    handle_payload(payload, payload_len);
 }
 void IPv4(const u_char *packet){
-	printf("\nIPv4 HEADER (Layer 3)\n");
+    printf("\nIPv4 HEADER (Layer 3)\n");
     printf("-----------------------\n");
-	const struct  ip *ip_header = (const struct ip*)packet;
-	char src[INET_ADDRSTRLEN];
-	char dst[INET_ADDRSTRLEN];
+    const struct  ip *ip_header = (const struct ip*)packet;
+    char src[INET_ADDRSTRLEN];
+    char dst[INET_ADDRSTRLEN];
 
-	// from binary to readable format
+    // from binary to readable format
 
-	inet_ntop(AF_INET, &(ip_header->ip_src),src,INET_ADDRSTRLEN);
-	inet_ntop(AF_INET, &(ip_header->ip_dst),dst,INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip_header->ip_src),src,INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip_header->ip_dst),dst,INET_ADDRSTRLEN);
 
-	printf(" Src IP: %s | Dst IP: %s | Protocol: ",src,dst);
-	if(ip_header->ip_p == IPPROTO_TCP)
-		printf("TCP (%d)",IPPROTO_TCP);
-	else if(ip_header->ip_p == IPPROTO_UDP)
-		printf("UDP (%d)",IPPROTO_UDP);
-	else if(ip_header->ip_p == IPPROTO_ICMP)
-		printf("ICMP (%d)",IPPROTO_ICMP);
-	printf(" | TTL: %d\nID: 0x%04X | Total Length: %d | Header Length: %d bytes | ",ip_header->ip_ttl,ntohs(ip_header->ip_id),ntohs(ip_header->ip_len),ip_header->ip_hl * 4);
-	uint16_t flags = ntohs(ip_header->ip_off);
-	int df_flag = (flags & IP_DF) ? 1 : 0; 
-	int mf_flag = (flags & IP_MF) ? 1 : 0; 
-	printf("Flags: DF: %d MF: %d\n",df_flag,mf_flag);
-	uint ip_header_len = ip_header->ip_hl * 4;
-	const u_char *l4_packet = packet + ip_header_len;
-	int ip_payload_len = ntohs(ip_header->ip_len) - ip_header_len;
-	if(ip_header->ip_p == IPPROTO_TCP)
-		TCP(l4_packet,ip_payload_len);
-	else if(ip_header->ip_p == IPPROTO_UDP)
-		UDP(l4_packet,ip_payload_len);
-	return;
+    printf(" Src IP: %s | Dst IP: %s | Protocol: ",src,dst);
+    if(ip_header->ip_p == IPPROTO_TCP)
+        printf("TCP (%d)",IPPROTO_TCP);
+    else if(ip_header->ip_p == IPPROTO_UDP)
+        printf("UDP (%d)",IPPROTO_UDP);
+    else if(ip_header->ip_p == IPPROTO_ICMP)
+        printf("ICMP (%d)",IPPROTO_ICMP);
+    printf(" | TTL: %d\nID: 0x%04X | Total Length: %d | Header Length: %d bytes | ",ip_header->ip_ttl,ntohs(ip_header->ip_id),ntohs(ip_header->ip_len),ip_header->ip_hl * 4);
+    uint16_t flags = ntohs(ip_header->ip_off);
+    int df_flag = (flags & IP_DF) ? 1 : 0; 
+    int mf_flag = (flags & IP_MF) ? 1 : 0; 
+    printf("Flags: DF: %d MF: %d\n",df_flag,mf_flag);
+    uint ip_header_len = ip_header->ip_hl * 4;
+    const u_char *l4_packet = packet + ip_header_len;
+    int ip_payload_len = ntohs(ip_header->ip_len) - ip_header_len;
+    if(ip_header->ip_p == IPPROTO_TCP)
+        TCP(l4_packet,ip_payload_len);
+    else if(ip_header->ip_p == IPPROTO_UDP)
+        UDP(l4_packet,ip_payload_len);
+    return;
 }
 void IPv6(const u_char *packet){
     printf("\nIPv6 HEADER (Layer 3) \n");
     printf("-----------------------\n");
-	const struct  ip6_hdr *ip_header = (const struct ip6_hdr *)packet;
-	char src[INET6_ADDRSTRLEN];
-	char dst[INET6_ADDRSTRLEN];
+    const struct  ip6_hdr *ip_header = (const struct ip6_hdr *)packet;
+    char src[INET6_ADDRSTRLEN];
+    char dst[INET6_ADDRSTRLEN];
 
-	// from binary to readable format
+    // from binary to readable format
 
-	inet_ntop(AF_INET6, &(ip_header->ip6_src),src,INET6_ADDRSTRLEN);
-	inet_ntop(AF_INET6, &(ip_header->ip6_dst),dst,INET6_ADDRSTRLEN);
+    inet_ntop(AF_INET6, &(ip_header->ip6_src),src,INET6_ADDRSTRLEN);
+    inet_ntop(AF_INET6, &(ip_header->ip6_dst),dst,INET6_ADDRSTRLEN);
 
-	printf(" Src IP: %s | Dst IP: %s\nNext header: ",src,dst);
-	if(ip_header->ip6_nxt == IPPROTO_TCP)
-		printf("TCP (%d)",IPPROTO_TCP);
-	else if(ip_header->ip6_nxt == IPPROTO_UDP)
-		printf("UDP (%d)",IPPROTO_UDP);
-	printf(" | ");
-	uint32_t flow = ntohl(ip_header->ip6_flow);
-	uint8_t val = flow>>20;
-	uint32_t label = flow & 0x000FFFFF;
-	printf("Hop Limit: %d | Traffic Class: 0x%02x | Flow Label: 0x%05x | Payload Length: %d\n",ip_header->ip6_hlim,val,label,ntohs(ip_header->ip6_plen));
-	int ip_payload_len = ntohs(ip_header->ip6_plen);
-	const u_char *l4_packet = packet + 40;
-	if(ip_header->ip6_nxt == IPPROTO_TCP)
-		TCP(l4_packet,ip_payload_len);
-	else if(ip_header->ip6_nxt == IPPROTO_UDP)
-		UDP(l4_packet,ip_payload_len);
-	return;
+    printf(" Src IP: %s | Dst IP: %s\nNext header: ",src,dst);
+    if(ip_header->ip6_nxt == IPPROTO_TCP)
+        printf("TCP (%d)",IPPROTO_TCP);
+    else if(ip_header->ip6_nxt == IPPROTO_UDP)
+        printf("UDP (%d)",IPPROTO_UDP);
+    printf(" | ");
+    uint32_t flow = ntohl(ip_header->ip6_flow);
+    uint8_t val = flow>>20;
+    uint32_t label = flow & 0x000FFFFF;
+    printf("Hop Limit: %d | Traffic Class: 0x%02x | Flow Label: 0x%05x | Payload Length: %d\n",ip_header->ip6_hlim,val,label,ntohs(ip_header->ip6_plen));
+    int ip_payload_len = ntohs(ip_header->ip6_plen);
+    const u_char *l4_packet = packet + 40;
+    if(ip_header->ip6_nxt == IPPROTO_TCP)
+        TCP(l4_packet,ip_payload_len);
+    else if(ip_header->ip6_nxt == IPPROTO_UDP)
+        UDP(l4_packet,ip_payload_len);
+    return;
 }
 void ARP(const u_char *packet) {
-	const struct ether_arp *arp_header = (const struct ether_arp *)packet;
-	char sender_ip[INET_ADDRSTRLEN];
-	char target_ip[INET_ADDRSTRLEN];
+    const struct ether_arp *arp_header = (const struct ether_arp *)packet;
+    char sender_ip[INET_ADDRSTRLEN];
+    char target_ip[INET_ADDRSTRLEN];
 
-	inet_ntop(AF_INET, arp_header->arp_spa, sender_ip, INET_ADDRSTRLEN);
-	inet_ntop(AF_INET, arp_header->arp_tpa, target_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, arp_header->arp_spa, sender_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, arp_header->arp_tpa, target_ip, INET_ADDRSTRLEN);
     printf("\nARP HEADER (Layer 3)\n");
     printf("--------------------\n");
-	printf("Operation: ");
-	switch (ntohs(arp_header->ea_hdr.ar_op)) {
-		case ARPOP_REQUEST: printf("Request (1)"); break;
-		case ARPOP_REPLY:   printf("Reply (2)"); break;
-		default:            printf("Unknown (%d)", ntohs(arp_header->ea_hdr.ar_op)); break;
-	}
-	printf(" | Sender IP: %s", sender_ip);
-	printf(" | Target IP: %s\n", target_ip);
-	printf("Sender MAC: ");
-	print_mac_address(arp_header->arp_sha);
-	printf(" | Target MAC: ");
-	print_mac_address(arp_header->arp_tha);
-	printf("\n");
-	printf("HW Type: %d | Proto Type: 0x%04x | HW Len: %d | Proto Len: %d\n", 
-			ntohs(arp_header->ea_hdr.ar_hrd),ntohs(arp_header->ea_hdr.ar_pro) ,
-			arp_header->ea_hdr.ar_hln,arp_header->ea_hdr.ar_pln);
+    printf("Operation: ");
+    switch (ntohs(arp_header->ea_hdr.ar_op)) {
+        case ARPOP_REQUEST: printf("Request (1)"); break;
+        case ARPOP_REPLY:   printf("Reply (2)"); break;
+        default:            printf("Unknown (%d)", ntohs(arp_header->ea_hdr.ar_op)); break;
+    }
+    printf(" | Sender IP: %s", sender_ip);
+    printf(" | Target IP: %s\n", target_ip);
+    printf("Sender MAC: ");
+    print_mac_address(arp_header->arp_sha);
+    printf(" | Target MAC: ");
+    print_mac_address(arp_header->arp_tha);
+    printf("\n");
+    printf("HW Type: %d | Proto Type: 0x%04x | HW Len: %d | Proto Len: %d\n", 
+            ntohs(arp_header->ea_hdr.ar_hrd),ntohs(arp_header->ea_hdr.ar_pro) ,
+            arp_header->ea_hdr.ar_hln,arp_header->ea_hdr.ar_pln);
 
 }
 
@@ -282,7 +297,7 @@ void pckt_handler(u_char *user_data, const struct pcap_pkthdr *pkthdr, const u_c
     uint16_t src = 0, dst = 0;
     const struct ether_header *ether_hdr = (struct ether_header *)packet;
     uint16_t ether = ntohs(ether_hdr->ether_type);
-    
+
     //storing the Data
     if(*id < MAX_PACKETS){
         my_data[*id].packet = malloc(pkthdr->caplen);

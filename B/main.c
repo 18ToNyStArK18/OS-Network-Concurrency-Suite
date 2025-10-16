@@ -85,6 +85,10 @@ int main(){
             int req;
             printf("Enter the input for which you want detailed analysis: ");
             scanf("%d",&req);
+            if(req == 0){
+                printf("You entered 0 so skipping the detailed analysis part\n");
+                continue;
+            }
             Detailed_analysis(req);
         }
         else {
