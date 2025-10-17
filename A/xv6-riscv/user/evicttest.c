@@ -13,7 +13,7 @@ main(int argc, char *argv[])
 
   // Allocate a very large amount of memory to exceed physical memory
   // This will be more than enough to trigger eviction with 128MB RAM.
-  int size = 23770 * 4096; 
+  int size = 23750 * 4096; 
   char *mem = sbrk(size);
   if (mem == (char*)-1) {
     printf("sbrk failed\n");

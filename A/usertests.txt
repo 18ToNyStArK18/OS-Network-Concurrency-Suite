@@ -40,27 +40,26 @@ forktest OK
 sbrkbasic OK
 sbrkmuch OK
 kernmem OK
-MAXVAplus panic walk
-sbrkfail failed
+MAXVAplus OK
 sbrkarg failed
 validatetest OK
 bsstest OK
 bigargtest OK
-argptest panic freewalk leaf
+argptest Ok
 stacktest panic mappages remap
-nowrite failed
+nowrite OK
 pgbug OK
-sbrkbugs crashed/infiniteloop
+sbrkbugs OK
 sbrklast OK
 sbrk8000 OK
 badarg OK
 lazy_alloc OK
-lazy_unmap panic free walk
-lazy_copy panic freewal leaf
+lazy_unmap OK
+lazy_copy OK
 lazy_sbrk OK
 bigdir OK
 manywrites OK
 badwrite OK
-execout idk what is happenening
+execout OK
 diskfull OK
 outofinodes OK

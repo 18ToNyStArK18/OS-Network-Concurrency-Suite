@@ -129,7 +129,7 @@ void *Chef(void *args){
             pthread_mutex_unlock(&sofa_access_lock);
             if(standing_customer != NULL){
 
-                printf("[%ld] Customer %ld left\n",time(NULL)-init_time,current->customer_id);
+                printf("[%ld] Customer %ld leaves\n",time(NULL)-init_time,current->customer_id);
                 sleep(1); // to leave
                 printf("[%ld] Customer %ld moves from standing to sofa\n",time(NULL)-init_time, standing_customer->customer_id);
                 sleep(1);
@@ -140,7 +140,7 @@ void *Chef(void *args){
             }
             else{
 
-                printf("[%ld] Customer %ld left\n",time(NULL)-init_time,current->customer_id);
+                printf("[%ld] Customer %ld leaves\n",time(NULL)-init_time,current->customer_id);
                 sleep(1);// spends one second to leave
             }
         }

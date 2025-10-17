@@ -1,5 +1,6 @@
 // Saved registers for kernel context switches.
 #include"param.h"
+#include "elf.h"
 struct context {
   uint64 ra;
   uint64 sp;
@@ -128,4 +129,6 @@ struct proc {
   int data_end;
   int heap_end;
   int stack_top;
+  int num_phdrs;
+  struct proghdr phdrs[16];
 };

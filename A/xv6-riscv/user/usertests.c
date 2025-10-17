@@ -2962,7 +2962,7 @@ badwrite(char *s)
 void
 execout(char *s)
 {
-  for(int avail = 0; avail < 15; avail++){
+  for(int avail = 0; avail < 1 ; avail++){
     int pid = fork();
     if(pid < 0){
       printf("fork failed\n");

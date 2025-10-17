@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "defs.h"
 #include "file.h"
+#include "elf.h"
 
 struct cpu cpus[NCPU];
 
@@ -134,6 +135,7 @@ found:
   p->data_start=0;
   p->data_end=0;
   p->stack_top=0;
+  p->num_phdrs=0;
   for(int i=0;i<MAX_SWAP_PAGES;i++)
       p->swap_slots[i]=0;
   // Allocate a trapframe page.

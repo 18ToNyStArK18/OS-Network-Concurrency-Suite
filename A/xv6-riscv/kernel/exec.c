@@ -179,6 +179,10 @@ kexec(char *path, char **argv)
           sz = ph.vaddr + ph.memsz;
   }
   p->exec_ip = idup(ip);
+  p->num_phdrs = elf.phnum;
+  
+  if(readi(ip, 0, (uint64)p->phdrs, elf.phoff, sizeof(struct proghdr) * p->num_phdrs) != sizeof(struct proghdr) * p->num_phdrs)
+    goto bad;
   iunlockput(ip);
   end_op();
   ip = 0;

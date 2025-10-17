@@ -78,17 +78,45 @@ usertrap(void)
         // CASE 1: Minor Fault (Trap-on-Write).
         // The page is already in memory, but we tried to write to it.
         if(r_scause() == 15 && pte != 0 && (*pte & PTE_V) && !(*pte & PTE_W)) {
-            // This is not an error. It's how we track dirty pages.
 
-            // 1. Grant write permission.
-            *pte |= PTE_W;
+            // Check if the original segment was meant to be writable.
+            int can_write = 0;
+            uint64 page_va = PGROUNDDOWN(va);
 
-            // 2. Find the page in our resident list and mark it as dirty.
-            for(int i = 0; i < p->num_resident; i++) {
-                if(p->resident_pages[i].va == PGROUNDDOWN(va)) {
-                    p->resident_pages[i].dirty = 1;
-                    break;
+            // For heap and stack, writes are always allowed.
+            if (page_va >= p->heap_start) {
+                can_write = 1;
+            } 
+            // For text/data, check the saved program headers.
+            else {
+                for(int i = 0; i < p->num_phdrs; i++) {
+                    struct proghdr ph = p->phdrs[i];
+                    if(page_va >= ph.vaddr && page_va < ph.vaddr + ph.memsz) {
+                        if (ph.flags & ELF_PROG_FLAG_WRITE) {
+                            can_write = 1;
+                        }
+                        break;
+                    }
                 }
+            }
+
+            if (can_write) {
+                // This is a legitimate write to a data/heap/stack page.
+                // Grant write permission to the PTE.
+                *pte |= PTE_W;
+
+                // Mark the page as dirty in your software tracking system.
+                for(int i = 0; i < p->num_resident; i++) {
+                    if(p->resident_pages[i].va == page_va) {
+                        p->resident_pages[i].dirty = 1;
+                        break;
+                    }
+                }
+            } else {
+                // This is an illegal write (segmentation fault). Kill the process.
+                const char *access_type = "write";
+                printf("[pid %d] KILL invalid-access va=0x%lx access=%s\n", p->pid, va, access_type);
+                setkilled(p);
             }
         } 
         // CASE 2: Major Fault.
@@ -107,10 +135,10 @@ usertrap(void)
             }
         }
     } else {
-            printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
-            printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
-            setkilled(p);
-        }
+        printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
+        printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+        setkilled(p);
+    }
 
     if(killed(p))
         kexit(-1);
