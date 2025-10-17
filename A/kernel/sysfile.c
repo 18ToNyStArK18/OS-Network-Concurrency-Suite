@@ -483,14 +483,17 @@ sys_pipe(void)
   struct proc *p = myproc();
 
   argaddr(0, &fdarray);
-  if(pipealloc(&rf, &wf) < 0)
-    return -1;
+  if(pipealloc(&rf, &wf) < 0){
+      printf("pipealloc failed\n");
+      return -1;
+  }
   fd0 = -1;
   if((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0){
     if(fd0 >= 0)
       p->ofile[fd0] = 0;
     fileclose(rf);
     fileclose(wf);
+    printf("Fd alloc failed\n");
     return -1;
   }
   if(copyout(p->pagetable, fdarray, (char*)&fd0, sizeof(fd0)) < 0 ||
@@ -499,6 +502,7 @@ sys_pipe(void)
     p->ofile[fd1] = 0;
     fileclose(rf);
     fileclose(wf);
+    printf("copyout failed\n");
     return -1;
   }
   return 0;

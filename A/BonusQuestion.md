@@ -7,3 +7,5 @@ The reason behind this swapping the clean files is basically just discarding
 so the swapping the clean files is optimal than dirty pages
 so first i am finding the clean pages if there are no clean pages then its normal fifo atp
 
+
+the bonus eviction is in the comments because if i uncomment it i am getting error unused function

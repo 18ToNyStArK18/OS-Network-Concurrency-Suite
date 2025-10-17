@@ -36,7 +36,8 @@ static int swap_write_page(struct proc *p,int slot,char *page_content){
 }
 static void add_to_resident_set(struct proc *p,uint64 va,int swapped){
     if(p->num_resident >= MAX_RESIDENT_PAGES){
-        panic("Resident set full\n");
+        printf("[pid %d]Resident set full\n",p->pid);
+        kexit(-1);
     }
     int i = p->num_resident;
     p->resident_pages[i].va = va;
@@ -428,7 +429,7 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
         if((pte = walk(pagetable, a, 1)) == 0)
             return -1;
         if(*pte & PTE_V)
-            panic("mappages: remap");
+            return-1;
         *pte = PA2PTE(pa) | perm | PTE_V;
         if(a == last)
             break;
@@ -568,10 +569,6 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
         if((pte = walk(old, i, 0)) == 0)
             continue;   // page table entry hasn't been allocated
         if((*pte & PTE_V) == 0){
-            pte_t *child_pte = walk(new,i,1);
-            if(child_pte == 0)
-                goto err;
-            *child_pte = *pte;
             continue;
         }
         pa = PTE2PA(*pte);
@@ -652,30 +649,31 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     if (r_scause() == 12) { access_type = "exec"; }
     else if (r_scause() == 13) { access_type = "read"; }
     else { access_type = "write"; }
+    pte_t *pte;
 
     uint64 n, va0, pa0;
-    pte_t *pte;
     while(len > 0){
         va0 = PGROUNDDOWN(dstva);
-        if(va0 >= MAXVA)
+        if(va0 >= MAXVA){
+            printf("over the limit\n");
             return -1;
-
+        }
         pa0 = walkaddr(pagetable, va0);
         if(pa0 == 0) {
             if(handle_pgfault(pagetable, va0,access_type) != 0) {
+                printf("handle_pgfault returned false\n");
                 return -1;
             }
             pa0 = walkaddr(pagetable, va0); // Retry getting the address
-            if(pa0 == 0) 
+            if(pa0 == 0){ 
+                printf("got 0 again\n");
                 return -1;
-
+            }
         }
-
         pte = walk(pagetable, va0, 0);
         // forbid copyout over read-only user text pages.
         if((*pte & PTE_W) == 0)
-            return -1;
-
+            return -1; 
         n = PGSIZE - (dstva - va0);
         if(n > len)
             n = len;
