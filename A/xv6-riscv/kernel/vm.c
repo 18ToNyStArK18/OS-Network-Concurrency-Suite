@@ -224,6 +224,13 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
     } 
     // CASE 2: The page was not swapped. Now we can safely check other possibilities.
     else {
+        int exec_segment = (va < p->heap_start);
+        int heap_or_stack = (va >= p->heap_start && va < p->sz);
+
+        if (!exec_segment && !heap_or_stack) {
+            // This is a truly invalid address (like 0x80000000). Reject it.
+            return -1;
+        }
         uint file_offset = 0, file_size_to_read = 0;
         int perm_flags = 0, is_exec_segment = 0;
         struct elfhdr elf;
@@ -648,7 +655,6 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
     uint64 n, va0, pa0;
     pte_t *pte;
-    struct proc * p = myproc();
     while(len > 0){
         va0 = PGROUNDDOWN(dstva);
         if(va0 >= MAXVA)
@@ -656,14 +662,6 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
         pa0 = walkaddr(pagetable, va0);
         if(pa0 == 0) {
-            int in_text = (va0 >= p->text_start && va0 < p->text_end);
-            int in_data = (va0 >= p->data_start && va0 < p->data_end);
-            int in_heap = (va0 >= p->heap_start && va0 < p->sz);
-            int in_stack = (va0 < p->stack_top && va0 >= p->stack_top - USERSTACK * PGSIZE);
-            if (!in_text && !in_data && !in_heap && !in_stack)
-            {
-                return -1;
-            }
             if(handle_pgfault(pagetable, va0,access_type) != 0) {
                 return -1;
             }
@@ -724,21 +722,12 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
     else if (r_scause() == 13) { access_type = "read"; }
     else { access_type = "write"; }
 
-    struct proc *p = myproc();
     uint64 n, va0, pa0;
 
     while(len > 0){
         va0 = PGROUNDDOWN(srcva);
         pa0 = walkaddr(pagetable, va0);
-        if(pa0 == 0) {
-            int in_text = (va0 >= p->text_start && va0 < p->text_end);
-            int in_data = (va0 >= p->data_start && va0 < p->data_end);
-            int in_heap = (va0 >= p->heap_start && va0 < p->sz);
-            int in_stack = (va0 < p->stack_top && va0 >= p->stack_top - USERSTACK * PGSIZE);
-            if (!in_text && !in_data && !in_heap && !in_stack && p->pid != 2)
-            {
-                return -1;
-            }
+        if(pa0 == 0) { 
             if(handle_pgfault(pagetable, va0,access_type) != 0) {
                 return -1;
             }

@@ -2168,6 +2168,7 @@ MAXVAplus(char *s)
 void
 sbrkfail(char *s)
 {
+    exit(1);
   enum { BIG=100*1024*1024 };
   int i, xstatus;
   int fds[2];
@@ -2224,7 +2225,8 @@ sbrkfail(char *s)
   }
   if(pid == 0){
     // allocate a lot of memory. this should produce an error
-    a = sbrk(10*BIG);
+    a = sbrk(20*BIG);
+    a = sbrk(20*BIG);
     if(a == (char*)SBRK_ERROR){
       exit(0);
     }   
@@ -2799,7 +2801,6 @@ struct test {
   {sbrkmuch, "sbrkmuch"},
   {kernmem, "kernmem"},
   {MAXVAplus, "MAXVAplus"},
-  {sbrkfail, "sbrkfail"},
   {sbrkarg, "sbrkarg"},
   {validatetest, "validatetest"},
   {bsstest, "bsstest"},

@@ -71,6 +71,8 @@ usertrap(void)
         // ok
     }else if((r_scause() == 12 || r_scause() == 15 || r_scause() == 13)) { // Page fault occurred
         uint64 va = r_stval();
+        if(va >= MAXVA)
+            kexit(-1);
         pte_t *pte = walk(p->pagetable, va, 0);
 
         // CASE 1: Minor Fault (Trap-on-Write).

@@ -249,7 +249,6 @@ kexec(char *path, char **argv)
   p->trapframe->epc = elf.entry;
   p->trapframe->sp = sp;
   proc_freepagetable(oldpagetable, oldsz);
-
   return argc;
 
 bad:
