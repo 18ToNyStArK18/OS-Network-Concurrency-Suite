@@ -181,7 +181,6 @@ void *customer(void *args){
 
     while(current->is_paying == 0)
         sleep(1);//wait until the payment
-
     sleep(1);//wait until he leaves
     sem_post(&num_of_seats);//increase free sofa
     sem_post(&num_of_cus);//increase the free slot in the shop
