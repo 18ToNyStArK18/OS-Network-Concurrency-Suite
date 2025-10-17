@@ -1,0 +1,29 @@
+[1] Customer 1001 enters
+[1] Customer 1002 enters
+[2] Customer 1002 sits on the sofa
+[2] Customer 1001 sits on the sofa
+[3] Customer 1002 requests cake
+[3] Customer 1001 requests cake
+[4] Chef 1 is baking for Customer 1002
+[4] Chef 3 is baking for Customer 1001
+[6] Customer 1002 got cake, ready to pay
+[6] Customer 1001 got cake, ready to pay
+[7] Chef 1 accepts the payment for the customer 1002
+[9] Customer 1002 left
+[9] Chef 3 accepts the payment for the customer 1001
+[11] Customer 1001 left
+[20] Customer 1003 enters
+[20] Customer 1004 enters
+[21] Customer 1003 sits on the sofa
+[21] Customer 1004 sits on the sofa
+[22] Customer 1003 requests cake
+[22] Customer 1004 requests cake
+[23] Chef 3 is baking for Customer 1004
+[23] Chef 4 is baking for Customer 1003
+[25] Customer 1004 got cake, ready to pay
+[25] Customer 1003 got cake, ready to pay
+[26] Chef 4 accepts the payment for the customer 1003
+[28] Customer 1003 left
+[28] Chef 3 accepts the payment for the customer 1004
+[30] Customer 1004 left
+All customers served. Bakery is closing.

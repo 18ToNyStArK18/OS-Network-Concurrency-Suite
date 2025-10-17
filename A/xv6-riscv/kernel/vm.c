@@ -14,7 +14,7 @@
  */
 pagetable_t kernel_pagetable;
 static int evict_page(struct proc *p);
-static void add_to_resident_set(struct proc *p, uint64 va);
+static void add_to_resident_set(struct proc *p, uint64 va,int swapped);
 static int swap_allocated_slot(struct proc *p){
     for(int i=0;i<MAX_SWAP_PAGES;i++){
         if(p->swap_slots[i]==0){
@@ -34,17 +34,77 @@ static int swap_write_page(struct proc *p,int slot,char *page_content){
 
 
 }
-static void add_to_resident_set(struct proc *p,uint64 va){
+static void add_to_resident_set(struct proc *p,uint64 va,int swapped){
     if(p->num_resident >= MAX_RESIDENT_PAGES){
         panic("Resident set full\n");
     }
     int i = p->num_resident;
     p->resident_pages[i].va = va;
-    p->resident_pages[i].seq = p->next_fifo_seq++;
-    p->resident_pages[i].dirty = 0;
+    p->resident_pages[i].seq = ++p->next_fifo_seq;
+    p->resident_pages[i].dirty = swapped;
     p->num_resident++;
     printf("[pid %d] RESIDENT va=0x%lx seq=%d\n", p->pid, va, p->next_fifo_seq);
 }
+/*
+static int evict_page_bonus(struct proc *p){
+
+    printf("[pid %d] MEMFULL\n",p->pid);
+    int min_clean_indx = -1;
+    for(int i=0;i<p->num_resident;i++){
+        if(p->resident_pages[i].dirty == 0 && p->resident_pages[i].va > p->heap_start){
+            if(min_clean_indx == -1 || p->resident_pages[i].seq < p->resident_pages[min_clean_indx].seq)
+                min_clean_indx = i;
+        }
+    }
+    if(min_clean_indx == -1){
+        min_clean_indx = 0;
+        for(int i = 1;i<p->num_resident;i++){
+            if(p->resident_pages[i].seq < p->resident_pages[min_clean_indx].seq){
+                min_clean_indx = i;
+            }
+        }
+
+    }
+    uint64 va = p->resident_pages[min_clean_indx].va;
+    int seq = p->resident_pages[min_clean_indx].seq;
+    int dirty = p->resident_pages[min_clean_indx].dirty;
+    printf("[pid %d] VICTIM va=0x%lx seq=%d algo=FIFO_with_contraints\n",p->pid,va,seq);
+
+    if(dirty){
+        printf("[pid %d] EVICT va=0x%lx state=dirty\n",p->pid,va);
+        int slot = swap_allocated_slot(p);
+        if(slot == -1){
+            printf("[pid %d] SWAPFULL\n", p->pid);
+            printf("[pid %d] KILL swap-exhausted\n", p->pid);
+            kexit(-1);
+            return -1;
+        }
+        printf("[pid %d] SWAPOUT va=0x%lx slot=%d\n", p->pid, va, slot);
+
+        uint64 pa = walkaddr(p->pagetable, va);
+        begin_op();
+        if (swap_write_page(p, slot, (char*)pa) != 0) {
+            end_op();
+            printf("[pid %d] Write failed max file size execeded\n",p->pid);
+            kexit(-1);
+        }
+        end_op();
+        p->swapped_pages[p->num_swappped_pages].va = va;
+        p->swapped_pages[p->num_swappped_pages].slot = slot;
+        p->num_swappped_pages++;
+
+    }
+    else{
+        printf("[pid %d] EVICT va=0x%lx state=clean\n",p->pid,va);
+        printf("[pid %d] DISCARD va=0x%lx\n",p->pid,va);
+    }
+    //remove the victim_inx page from the list of the resident_pages;
+    //uvmunmap the page and free the memory in the physical memory
+    uvmunmap(p->pagetable,va,1,1);
+    p->resident_pages[min_clean_indx] = p->resident_pages[p->num_resident - 1];
+    p->num_resident--;
+    return 0;
+}*/
 static int evict_page(struct proc *p){
     printf("[pid %d] MEMFULL\n",p->pid);
 
@@ -95,131 +155,11 @@ static int evict_page(struct proc *p){
     p->num_resident--;
     return 0;
 }
-
 extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
                           // Add this entire new function to the end of kernel/vm.c
-/*
-int handle_pgfault(pagetable_t pagetable, uint64 va,const char *access_type)
-{
-    struct proc *p = myproc();
-    char *mem;
-    const char *cause=0;
-    if(va >= MAXVA){
-        return -1;
-    }
-    int swap_slot = -1;
-    for(int i = 0; i < p->num_swappped_pages; i++){
-        if(p->swapped_pages[i].va == PGROUNDDOWN(va)){
-            swap_slot = p->swapped_pages[i].slot;
-            
-            // Remove from swapped list
-            p->swapped_pages[i] = p->swapped_pages[p->num_swappped_pages - 1];
-            p->num_swappped_pages--;
-            p->swap_slots[swap_slot] = 0; // Free the slot
-            break;
-        }
-    }
-    va = PGROUNDDOWN(va);
-    uint file_offset = 0;
-    uint file_size_to_read = 0;
-    int perm_flags = 0;
-    // First, check if the address belongs to a code/data segment.
-    struct elfhdr elf;
-    struct proghdr ph;
-    int is_exec_segment = 0;
-    mem = kalloc();//trying to allocate the memory
-    if(mem == 0){
-        if(evict_page(p) < 0){
-            //something weired happened
-            printf("something weird happened\n");
-            setkilled(p);
-            return -1;
-        }
-        mem = kalloc(); //try again
-        if(mem == 0){
-            printf("This should not happen\n");
-            panic("kalloc failed after eviction");
-
-        }
-    }
-    memset(mem,0,PGSIZE);
-    readi(p->exec_ip, 0, (uint64)&elf, 0, sizeof(elf));
-    for(int i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)) {
-        readi(p->exec_ip, 0, (uint64)&ph, off, sizeof(ph));
-        if(ph.type == ELF_PROG_LOAD) {
-            if(va >= ph.vaddr && va < ph.vaddr + ph.memsz) {
-                is_exec_segment = 1;
-                file_offset = ph.off + (va - ph.vaddr);
-                file_size_to_read = ph.filesz > (va - ph.vaddr) ? ph.filesz - (va - ph.vaddr) : 0;
-                if(file_size_to_read > PGSIZE) file_size_to_read = PGSIZE;
-                perm_flags = flags2perm(ph.flags) | PTE_U;
-                break; // Found the segment
-            }
-        }
-    }
-    if(swap_slot != -1){
-        cause = "swap";
-        printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, r_stval(), access_type, cause);
-        printf("[pid %d] SWAPIN va=0x%lx slot=%d\n", p->pid, va, swap_slot);
-
-        // Read page from swap file into the newly allocated memory.
-        ilock(p->swap_file->ip);
-        if(readi(p->swap_file->ip, 0, (uint64)mem, swap_slot * PGSIZE, PGSIZE) != PGSIZE){
-            iunlock(p->swap_file->ip);
-            panic("swap_read_page failed");
-        }
-        iunlock(p->swap_file->ip);
-
-        // Map the page. Initially mark as read-only to track future writes.
-        
-        if(mappages(pagetable, va, PGSIZE, (uint64)mem, PTE_U|PTE_R) != 0) {
-            kfree(mem); return -1;
-        }
-
-    }
-    else if (is_exec_segment) {
-        cause="exec";
-        printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, va, access_type, cause);
-        printf("[pid %d] LOADEXEC va=0x%lx\n", p->pid, va);
-        if(readi(p->exec_ip, 0, (uint64)mem, file_offset, file_size_to_read) != file_size_to_read) {
-            kfree(mem); return -1;
-        }
-        if(mappages(pagetable, va, PGSIZE, (uint64)mem, perm_flags) != 0) {
-            kfree(mem); return -1;
-        }
-    }
-    // Is it a HEAP fault?
-    else if (va < p->sz) {
-        cause="heap";
-        printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, va, access_type, cause);
-        printf("[pid %d] ALLOC va=0x%lx\n", p->pid, va);
-        if(mappages(pagetable, va, PGSIZE, (uint64)mem, PTE_U|PTE_R) != 0) {
-            kfree(mem); return -1;
-        }
-    }
-    // Is it a STACK fault?
-    else if(va >= p->trapframe->sp - PGSIZE && va < MAXVA) {
-        cause = "stack";
-        printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, va, access_type, cause);
-        printf("[pid %d] ALLOC va=0x%lx\n", p->pid, va);
-        if(mappages(pagetable, va, PGSIZE, (uint64)mem, PTE_U|PTE_R) != 0) {
-            kfree(mem); return -1;
-        }
-    }
-    // Otherwise, it's an invalid address.
-    else {
-        printf("INVALID ADDRESS\n");
-        return -1;
-    }
-    add_to_resident_set(p,va);
-    return 0; // Success
-}
-*/
-// In vm.c
-
-int
+    int
 handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
 {
     struct proc *p = myproc();
@@ -233,7 +173,7 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
 
 
     // 1. Check if the page is in the swap file first. This is a fast check.
-       va = PGROUNDDOWN(va);
+    va = PGROUNDDOWN(va);
     // Allocate physical memory for the new page (may trigger eviction).
     mem = kalloc();
     if(mem == 0){
@@ -256,16 +196,18 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
             break;
         }
     }
-    
+
 
     // --- LOGIC RESTRUCTURED HERE ---
 
     // CASE 1: The page was swapped out. Load it from the swap file.
+    int is_swapped=0;
     if(swap_slot != -1) {
+        is_swapped =1;
         cause = "swap";
         printf("[pid %d] PAGEFAULT va=0x%lx access=%s cause=%s\n", p->pid, va, access_type, cause);
         printf("[pid %d] SWAPIN va=0x%lx slot=%d\n", p->pid, va, swap_slot);
-        
+
         begin_op();
         ilock(p->swap_file->ip);
         if(readi(p->swap_file->ip, 0, (uint64)mem, swap_slot * PGSIZE, PGSIZE) != PGSIZE){
@@ -275,7 +217,7 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
         }
         iunlock(p->swap_file->ip);
         end_op();
-        
+
         if(mappages(pagetable, va, PGSIZE, (uint64)mem, PTE_U|PTE_R) != 0) {
             kfree(mem); return -1;
         }
@@ -286,7 +228,7 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
         int perm_flags = 0, is_exec_segment = 0;
         struct elfhdr elf;
         struct proghdr ph;
-        
+
         readi(p->exec_ip, 0, (uint64)&elf, 0, sizeof(elf));
         for(int i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)) {
             readi(p->exec_ip, 0, (uint64)&ph, off, sizeof(ph));
@@ -330,7 +272,7 @@ handle_pgfault(pagetable_t pagetable, uint64 va, const char *access_type)
         }
     }
 
-    add_to_resident_set(p, va);
+    add_to_resident_set(p, va,is_swapped);
     return 0; // Success
 }
 // Make a direct-map page table for the kernel.
@@ -608,7 +550,7 @@ uvmfree(pagetable_t pagetable, uint64 sz)
 // physical memory.
 // returns 0 on success, -1 on failure.
 // frees any allocated pages on failure.
-int
+    int
 uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 {
     pte_t *pte;
@@ -642,42 +584,42 @@ err:
     return -1;
 }
 /*int
-uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
-{
+  uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
+  {
   pte_t *pte;
   uint64 pa, i;
   uint flags;
   char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walk(old, i, 0)) == 0)
-      continue; // Page not even lazily allocated
+  if((pte = walk(old, i, 0)) == 0)
+  continue; // Page not even lazily allocated
 
-    if(*pte & PTE_V){
-      // Page is resident in parent's memory.
-      // We must allocate a new page for the child and copy the content.
-      pa = PTE2PA(*pte);
-      flags = PTE_FLAGS(*pte);
-      if((mem = kalloc()) == 0)
-        goto err;
-      memmove(mem, (char*)pa, PGSIZE);
-      if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-        kfree(mem);
-        goto err;
-      }
-    } else {
-      // Page is not resident (it's a lazy or swapped page).
-      // Just copy the PTE itself to the child's page table.
-      // The child will fault on it later, just like the parent would have.
-      if(mappages(new, i, PGSIZE, 0, PTE_FLAGS(*pte)) != 0)
-        goto err;
-    }
-  }
-  return 0;
+  if(*pte & PTE_V){
+// Page is resident in parent's memory.
+// We must allocate a new page for the child and copy the content.
+pa = PTE2PA(*pte);
+flags = PTE_FLAGS(*pte);
+if((mem = kalloc()) == 0)
+goto err;
+memmove(mem, (char*)pa, PGSIZE);
+if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
+kfree(mem);
+goto err;
+}
+} else {
+// Page is not resident (it's a lazy or swapped page).
+// Just copy the PTE itself to the child's page table.
+// The child will fault on it later, just like the parent would have.
+if(mappages(new, i, PGSIZE, 0, PTE_FLAGS(*pte)) != 0)
+goto err;
+}
+}
+return 0;
 
- err:
-  uvmunmap(new, 0, i / PGSIZE, 1);
-  return -1;
+err:
+uvmunmap(new, 0, i / PGSIZE, 1);
+return -1;
 }
 */
 // mark a PTE invalid for user access.

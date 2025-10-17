@@ -1,0 +1,85 @@
+[1] Customer 1401 enters
+[2] Customer 1402 enters
+[2] Customer 1401 sits on the sofa
+[3] Customer 1403 enters
+[3] Customer 1402 sits on the sofa
+[3] Customer 1401 requests cake
+[4] Customer 1403 sits on the sofa
+[4] Customer 1404 enters
+[4] Customer 1402 requests cake
+[4] Chef 3 is baking for Customer 1401
+[5] Customer 1403 requests cake
+[5] Chef 2 is baking for Customer 1402
+[5] Customer 1404 sits on the sofa
+[6] Chef 4 is baking for Customer 1403
+[6] Customer 1401 got cake, ready to pay
+[6] Customer 1404 requests cake
+[7] Customer 1402 got cake, ready to pay
+[7] Chef 3 accepts the payment for the customer 1401
+[7] Chef 1 is baking for Customer 1404
+[8] Customer 1418 enters
+[8] Customer 1403 got cake, ready to pay
+[9] Customer 1419 enters
+[9] Customer 1401 left
+[9] Customer 1404 got cake, ready to pay
+[9] Chef 2 accepts the payment for the customer 1402
+[10] Customer 14110 enters
+[10] Customer 1418 moves from standing to sofa
+[11] Customer 14111 enters
+[11] Customer 1418 requests cake
+[11] Customer 1402 left
+[11] Chef 4 accepts the payment for the customer 1403
+[12] Customer 14212 enters
+[12] Chef 3 is baking for Customer 1418
+[12] Customer 1419 moves from standing to sofa
+[13] Customer 14213 enters
+[13] Customer 1403 left
+[13] Chef 1 accepts the payment for the customer 1404
+[13] Customer 1419 requests cake
+[14] Customer 14214 enters
+[14] Customer 1418 got cake, ready to pay
+[14] Customer 14110 moves from standing to sofa
+[14] Chef 2 is baking for Customer 1419
+[15] Customer 14215 enters
+[15] Customer 1404 left
+[15] Chef 3 accepts the payment for the customer 1418
+[15] Customer 14110 requests cake
+[16] Customer 14111 moves from standing to sofa
+[16] Customer 1419 got cake, ready to pay
+[16] Chef 4 is baking for Customer 14110
+[17] Customer 1418 left
+[17] Customer 14111 requests cake
+[17] Chef 2 accepts the payment for the customer 1419
+[18] Customer 14212 moves from standing to sofa
+[18] Customer 14110 got cake, ready to pay
+[18] Chef 1 is baking for Customer 14111
+[19] Customer 14212 requests cake
+[19] Customer 1419 left
+[19] Chef 4 accepts the payment for the customer 14110
+[20] Chef 3 is baking for Customer 14212
+[20] Customer 14111 got cake, ready to pay
+[20] Customer 14213 moves from standing to sofa
+[21] Customer 14110 left
+[21] Chef 1 accepts the payment for the customer 14111
+[21] Customer 14213 requests cake
+[22] Customer 14212 got cake, ready to pay
+[22] Customer 14214 moves from standing to sofa
+[22] Chef 2 is baking for Customer 14213
+[23] Customer 14111 left
+[23] Chef 3 accepts the payment for the customer 14212
+[23] Customer 14214 requests cake
+[24] Chef 4 is baking for Customer 14214
+[24] Customer 14213 got cake, ready to pay
+[24] Customer 14215 moves from standing to sofa
+[25] Customer 14212 left
+[25] Chef 2 accepts the payment for the customer 14213
+[25] Customer 14215 requests cake
+[26] Customer 14214 got cake, ready to pay
+[26] Chef 1 is baking for Customer 14215
+[27] Customer 14213 left
+[27] Chef 4 accepts the payment for the customer 14214
+[28] Customer 14215 got cake, ready to pay
+[29] Customer 14214 left
+[29] Chef 1 accepts the payment for the customer 14215
+[31] Customer 14215 left
+All customers served. Bakery is closing.

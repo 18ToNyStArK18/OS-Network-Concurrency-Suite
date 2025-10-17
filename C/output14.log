@@ -1,0 +1,15 @@
+[1] Customer 1402 enters
+[1] Customer 1401 enters
+[2] Customer 1402 sits on the sofa
+[2] Customer 1401 sits on the sofa
+[3] Customer 1402 requests cake
+[3] Customer 1401 requests cake
+[4] Chef 3 is baking for Customer 1401
+[4] Chef 1 is baking for Customer 1402
+[6] Customer 1401 got cake, ready to pay
+[6] Customer 1402 got cake, ready to pay
+[7] Chef 3 accepts the payment for the customer 1401
+[9] Customer 1401 left
+[9] Chef 1 accepts the payment for the customer 1402
+[11] Customer 1402 left
+All customers served. Bakery is closing.

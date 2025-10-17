@@ -1,0 +1,36 @@
+[1] Customer 303 enters
+[1] Customer 301 enters
+[1] Customer 302 enters
+[1] Customer 304 enters
+[2] Customer 303 sits on the sofa
+[2] Customer 302 sits on the sofa
+[2] Customer 301 sits on the sofa
+[2] Customer 304 sits on the sofa
+[3] Customer 303 requests cake
+[3] Customer 302 requests cake
+[3] Customer 301 requests cake
+[3] Customer 304 requests cake
+[4] Chef 4 is baking for Customer 303
+[4] Chef 2 is baking for Customer 304
+[4] Chef 1 is baking for Customer 302
+[4] Chef 3 is baking for Customer 301
+[5] Customer 305 enters
+[6] Customer 303 got cake, ready to pay
+[6] Customer 304 got cake, ready to pay
+[6] Customer 301 got cake, ready to pay
+[6] Customer 302 got cake, ready to pay
+[7] Chef 4 accepts the payment for the customer 303
+[9] Customer 303 left
+[9] Chef 2 accepts the payment for the customer 304
+[10] Customer 305 moves from standing to sofa
+[11] Customer 304 left
+[11] Customer 305 requests cake
+[11] Chef 3 accepts the payment for the customer 301
+[12] Chef 4 is baking for Customer 305
+[13] Customer 301 left
+[13] Chef 1 accepts the payment for the customer 302
+[14] Customer 305 got cake, ready to pay
+[15] Customer 302 left
+[15] Chef 4 accepts the payment for the customer 305
+[17] Customer 305 left
+All customers served. Bakery is closing.

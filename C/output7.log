@@ -1,0 +1,177 @@
+[1] Customer 81 enters
+[1] Customer 85 enters
+[1] Customer 86 enters
+[1] Customer 83 enters
+[1] Customer 82 enters
+[1] Customer 84 enters
+[1] Customer 88 enters
+[1] Customer 87 enters
+[1] Customer 810 enters
+[1] Customer 812 enters
+[1] Customer 813 enters
+[1] Customer 811 enters
+[1] Customer 89 enters
+[1] Customer 814 enters
+[1] Customer 815 enters
+[1] Customer 816 enters
+[1] Customer 817 enters
+[1] Customer 818 enters
+[1] Customer 820 enters
+[1] Customer 819 enters
+[1] Customer 821 enters
+[1] Customer 823 enters
+[1] Customer 822 enters
+[1] Customer 824 enters
+[2] Customer 81 sits on the sofa
+[2] Customer 86 sits on the sofa
+[2] Customer 88 sits on the sofa
+[2] Customer 82 sits on the sofa
+[3] Customer 81 requests cake
+[3] Customer 86 requests cake
+[3] Customer 82 requests cake
+[3] Customer 88 requests cake
+[4] Chef 1 is baking for Customer 86
+[4] Chef 2 is baking for Customer 81
+[4] Chef 3 is baking for Customer 88
+[4] Chef 4 is baking for Customer 82
+[6] Customer 82 got cake, ready to pay
+[6] Customer 88 got cake, ready to pay
+[6] Customer 86 got cake, ready to pay
+[6] Customer 81 got cake, ready to pay
+[7] Chef 1 accepts the payment for the customer 86
+[9] Customer 86 left
+[9] Chef 3 accepts the payment for the customer 88
+[10] Customer 826 enters
+[10] Customer 825 leaves, bakery is full.
+[10] Customer 83 moves from standing to sofa
+[11] Customer 88 left
+[11] Customer 83 requests cake
+[11] Chef 2 accepts the payment for the customer 81
+[12] Customer 85 moves from standing to sofa
+[12] Chef 1 is baking for Customer 83
+[13] Customer 81 left
+[13] Chef 4 accepts the payment for the customer 82
+[13] Customer 85 requests cake
+[14] Customer 810 moves from standing to sofa
+[14] Customer 83 got cake, ready to pay
+[14] Chef 3 is baking for Customer 85
+[15] Customer 82 left
+[15] Customer 810 requests cake
+[15] Chef 1 accepts the payment for the customer 83
+[16] Customer 85 got cake, ready to pay
+[16] Customer 87 moves from standing to sofa
+[16] Chef 2 is baking for Customer 810
+[17] Customer 83 left
+[17] Chef 3 accepts the payment for the customer 85
+[17] Customer 87 requests cake
+[18] Customer 84 moves from standing to sofa
+[18] Customer 810 got cake, ready to pay
+[18] Chef 4 is baking for Customer 87
+[19] Customer 85 left
+[19] Customer 84 requests cake
+[19] Chef 2 accepts the payment for the customer 810
+[20] Customer 812 moves from standing to sofa
+[20] Customer 87 got cake, ready to pay
+[20] Chef 1 is baking for Customer 84
+[21] Customer 812 requests cake
+[21] Customer 810 left
+[21] Chef 4 accepts the payment for the customer 87
+[22] Customer 84 got cake, ready to pay
+[22] Customer 813 moves from standing to sofa
+[22] Chef 3 is baking for Customer 812
+[23] Customer 813 requests cake
+[23] Customer 87 left
+[23] Chef 1 accepts the payment for the customer 84
+[24] Customer 812 got cake, ready to pay
+[24] Customer 811 moves from standing to sofa
+[24] Chef 2 is baking for Customer 813
+[25] Customer 84 left
+[25] Chef 3 accepts the payment for the customer 812
+[25] Customer 811 requests cake
+[26] Customer 813 got cake, ready to pay
+[26] Customer 89 moves from standing to sofa
+[26] Chef 4 is baking for Customer 811
+[27] Customer 812 left
+[27] Chef 2 accepts the payment for the customer 813
+[27] Customer 89 requests cake
+[28] Customer 811 got cake, ready to pay
+[28] Customer 814 moves from standing to sofa
+[28] Chef 1 is baking for Customer 89
+[29] Chef 4 accepts the payment for the customer 811
+[29] Customer 814 requests cake
+[29] Customer 813 left
+[30] Chef 3 is baking for Customer 814
+[30] Customer 815 moves from standing to sofa
+[30] Customer 89 got cake, ready to pay
+[31] Customer 811 left
+[31] Customer 815 requests cake
+[31] Chef 1 accepts the payment for the customer 89
+[32] Customer 814 got cake, ready to pay
+[32] Customer 816 moves from standing to sofa
+[32] Chef 2 is baking for Customer 815
+[33] Customer 816 requests cake
+[33] Customer 89 left
+[33] Chef 3 accepts the payment for the customer 814
+[34] Customer 815 got cake, ready to pay
+[34] Chef 4 is baking for Customer 816
+[34] Customer 817 moves from standing to sofa
+[35] Customer 814 left
+[35] Customer 817 requests cake
+[35] Chef 2 accepts the payment for the customer 815
+[36] Customer 816 got cake, ready to pay
+[36] Customer 818 moves from standing to sofa
+[36] Chef 1 is baking for Customer 817
+[37] Customer 818 requests cake
+[37] Customer 815 left
+[37] Chef 4 accepts the payment for the customer 816
+[38] Chef 3 is baking for Customer 818
+[38] Customer 820 moves from standing to sofa
+[38] Customer 817 got cake, ready to pay
+[39] Customer 820 requests cake
+[39] Chef 1 accepts the payment for the customer 817
+[39] Customer 816 left
+[40] Customer 818 got cake, ready to pay
+[40] Customer 819 moves from standing to sofa
+[40] Chef 2 is baking for Customer 820
+[41] Customer 817 left
+[41] Chef 3 accepts the payment for the customer 818
+[41] Customer 819 requests cake
+[42] Customer 820 got cake, ready to pay
+[42] Chef 4 is baking for Customer 819
+[42] Customer 821 moves from standing to sofa
+[43] Customer 818 left
+[43] Chef 2 accepts the payment for the customer 820
+[43] Customer 821 requests cake
+[44] Customer 822 moves from standing to sofa
+[44] Customer 819 got cake, ready to pay
+[44] Chef 1 is baking for Customer 821
+[45] Customer 822 requests cake
+[45] Customer 820 left
+[45] Chef 4 accepts the payment for the customer 819
+[46] Chef 3 is baking for Customer 822
+[46] Customer 823 moves from standing to sofa
+[46] Customer 821 got cake, ready to pay
+[47] Customer 819 left
+[47] Chef 1 accepts the payment for the customer 821
+[47] Customer 823 requests cake
+[48] Customer 822 got cake, ready to pay
+[48] Customer 824 moves from standing to sofa
+[48] Chef 2 is baking for Customer 823
+[49] Chef 3 accepts the payment for the customer 822
+[49] Customer 821 left
+[49] Customer 824 requests cake
+[50] Customer 823 got cake, ready to pay
+[50] Customer 826 moves from standing to sofa
+[50] Chef 4 is baking for Customer 824
+[51] Customer 822 left
+[51] Customer 826 requests cake
+[51] Chef 2 accepts the payment for the customer 823
+[52] Chef 1 is baking for Customer 826
+[52] Customer 824 got cake, ready to pay
+[53] Customer 823 left
+[53] Chef 4 accepts the payment for the customer 824
+[54] Customer 826 got cake, ready to pay
+[55] Chef 1 accepts the payment for the customer 826
+[55] Customer 824 left
+[57] Customer 826 left
+All customers served. Bakery is closing.

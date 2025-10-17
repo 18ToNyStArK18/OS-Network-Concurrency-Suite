@@ -171,7 +171,7 @@ void *customer(void *args){
         pthread_mutex_unlock(&sofa_access_lock);
         printf("[%ld] Customer %ld requests cake\n",time(NULL) - init_time,current->customer_id);
     } else {
-        printf("[%ld] Customer %ld is standing\n",time(NULL)-init_time,current->customer_id);
+        //printf("[%ld] Customer %ld is standing\n",time(NULL)-init_time,current->customer_id);
         my_enqueue(&standing,current);
         pthread_mutex_unlock(&sofa_access_lock);
     }

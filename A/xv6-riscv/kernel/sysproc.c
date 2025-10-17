@@ -23,7 +23,7 @@ sys_memstat(void)
   k_info.pid = p->pid;
   k_info.num_resident_pages = p->num_resident;
   k_info.num_swapped_pages = p->num_swappped_pages;
-  k_info.next_fifo_seq = p->next_fifo_seq;
+  k_info.next_fifo_seq = p->next_fifo_seq+1;
   k_info.num_pages_total = p->sz / PGSIZE;
 
   // 2. Iterate through the process's virtual pages to get per-page stats.

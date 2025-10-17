@@ -1,0 +1,57 @@
+[1] Customer 901 enters
+[1] Customer 903 enters
+[1] Customer 902 enters
+[1] Customer 904 enters
+[2] Customer 901 sits on the sofa
+[2] Customer 903 sits on the sofa
+[2] Customer 902 sits on the sofa
+[2] Customer 904 sits on the sofa
+[3] Customer 901 requests cake
+[3] Customer 903 requests cake
+[3] Customer 904 requests cake
+[3] Customer 902 requests cake
+[4] Chef 4 is baking for Customer 901
+[4] Chef 3 is baking for Customer 903
+[4] Chef 1 is baking for Customer 902
+[4] Chef 2 is baking for Customer 904
+[6] Customer 901 got cake, ready to pay
+[6] Customer 902 got cake, ready to pay
+[6] Customer 903 got cake, ready to pay
+[6] Customer 904 got cake, ready to pay
+[7] Chef 1 accepts the payment for the customer 902
+[8] Customer 906 enters
+[8] Customer 905 enters
+[8] Customer 907 enters
+[8] Customer 908 enters
+[9] Customer 902 left
+[9] Chef 4 accepts the payment for the customer 901
+[10] Customer 906 moves from standing to sofa
+[11] Customer 901 left
+[11] Customer 906 requests cake
+[11] Chef 3 accepts the payment for the customer 903
+[12] Customer 905 moves from standing to sofa
+[12] Chef 1 is baking for Customer 906
+[13] Customer 905 requests cake
+[13] Customer 903 left
+[13] Chef 2 accepts the payment for the customer 904
+[14] Customer 906 got cake, ready to pay
+[14] Customer 907 moves from standing to sofa
+[14] Chef 4 is baking for Customer 905
+[15] Customer 907 requests cake
+[15] Customer 904 left
+[15] Chef 1 accepts the payment for the customer 906
+[16] Customer 905 got cake, ready to pay
+[16] Chef 3 is baking for Customer 907
+[16] Customer 908 moves from standing to sofa
+[17] Customer 906 left
+[17] Chef 4 accepts the payment for the customer 905
+[17] Customer 908 requests cake
+[18] Chef 2 is baking for Customer 908
+[18] Customer 907 got cake, ready to pay
+[19] Customer 905 left
+[19] Chef 3 accepts the payment for the customer 907
+[20] Customer 908 got cake, ready to pay
+[21] Customer 907 left
+[21] Chef 2 accepts the payment for the customer 908
+[23] Customer 908 left
+All customers served. Bakery is closing.

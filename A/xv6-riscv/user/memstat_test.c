@@ -14,6 +14,7 @@ main()
   p[0] = 'A';
   p[4096] = 'B';
   p[8192] = 'C';
+  p[4096*3]='D';
 
   // Call the new system call
   if (memstat(&info) < 0) {
