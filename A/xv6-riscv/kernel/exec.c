@@ -216,6 +216,7 @@ kexec(char *path, char **argv)
       if(copyout(pagetable, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
           goto bad;
       ustack[argc] = sp;
+      printf("sp = 0x%lx and sb = 0x%lx\n",sp,stackbase);
   }
   ustack[argc] = 0;
 
