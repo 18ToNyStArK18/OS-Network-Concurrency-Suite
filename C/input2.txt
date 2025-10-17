@@ -1,7 +1,0 @@
-1 Customer 201
-1 Customer 202
-1 Customer 203
-1 Customer 204
-2 Customer 205
-2 Customer 206
-<EOF>
