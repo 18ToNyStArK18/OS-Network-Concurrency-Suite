@@ -2,7 +2,7 @@
 
 This module modifies the **xv6 operating system** to implement demand paging and swap management. It transitions xv6 from eager memory allocation to a lazy, efficient model.
 
-## 📂 Project Structure
+##  Project Structure
 
 ```text
 xv6-Lazy-Allocation/
@@ -24,7 +24,7 @@ xv6-Lazy-Allocation/
 └── Makefile          # Compilation rules
 ```
 
-## ✨ Features Implemented
+## Features Implemented
 
 ### Demand Paging:
 - `exec` and `sbrk` no longer allocate physical memory immediately.
@@ -41,7 +41,7 @@ xv6-Lazy-Allocation/
 ### System Inspection:
 - `memstat()` syscall implemented to expose page states (Resident, Swapped, Unmapped).
 
-## 🔨 How to Run
+##  How to Run
 
 ### 1. Boot xv6 in QEMU:
 ```bash
@@ -54,7 +54,7 @@ $ memstat_test
 $ evicttest
 ```
 
-## 📊 Logging Format
+##  Logging Format
 
 The kernel emits strict log formats for grading:
 
