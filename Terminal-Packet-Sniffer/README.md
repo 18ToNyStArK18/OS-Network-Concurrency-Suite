@@ -2,7 +2,7 @@
 
 **C-Shark** is a raw socket network analyzer designed to capture, dissect, and display network traffic directly in the terminal. It mimics core Wireshark functionalities using `libpcap`.
 
-## 📂 Project Structure
+##  Project Structure
 
 ```text
 Terminal-Packet-Sniffer/
@@ -13,7 +13,7 @@ Terminal-Packet-Sniffer/
 └── Makefile      # Build configuration
 ```
 
-## 🦈 Features
+## Features
 
 - **Interface Discovery**: Auto-detects available network interfaces (e.g., wlan0, eth0, lo).
 - **Layer 2 (Data Link)**: Decodes Ethernet Headers (MAC addresses, EtherType).
@@ -22,7 +22,7 @@ Terminal-Packet-Sniffer/
 - **Layer 7 (Application)**: Identifies HTTP, HTTPS, DNS, and provides a Hex + ASCII Dump of the payload.
 - **Filtering**: Filters traffic based on protocol (HTTP, TCP, UDP, etc.).
 
-## 🔨 Build & Usage
+##  Build & Usage
 
 ### 1. Dependencies:
 ```bash
